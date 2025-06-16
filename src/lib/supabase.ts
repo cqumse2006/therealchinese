@@ -3,7 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please check your .env file.');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: false,
+    detectSessionInUrl: false
+  }
+});
 
 export interface Comment {
   id: number;
@@ -27,15 +37,36 @@ export const fetchComments = async () => {
 };
 
 export const addComment = async (name: string, message: string) => {
-  const { data, error } = await supabase
-    .from('comments')
-    .insert([{ name, message }])
-    .select();
+  try {
+    console.log('Adding comment:', { name, message });
     
-  if (error) {
-    console.error('Error adding comment:', error);
+    if (!name || !message) {
+      throw new Error('Name and message are required');
+    }
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{ 
+        name: name.trim(), 
+        message: message.trim() 
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw new Error(error.message || 'Failed to add comment');
+    }
+
+    console.log('Comment added successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in addComment:', error);
     throw error;
   }
-  
-  return data?.[0];
 };

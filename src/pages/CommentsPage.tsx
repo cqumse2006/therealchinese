@@ -59,9 +59,23 @@ const CommentsPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to post comment:', error);
+      let errorMessage = 'Failed to post comment. Please try again later.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('permission denied')) {
+          errorMessage = 'Permission denied. Please check your Supabase RLS policies.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('JWT')) {
+          errorMessage = 'Authentication error. Please check your Supabase configuration.';
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to post comment. Please try again later.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
