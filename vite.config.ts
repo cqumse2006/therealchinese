@@ -4,12 +4,14 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/' : '/',
   server: {
     host: "::",
     port: 8080
   },
   plugins: [
-  react()],
+    react()
+  ],
 
   resolve: {
     alias: {
